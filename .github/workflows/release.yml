@@ -1,0 +1,42 @@
+---
+name: Compile LaTeX Résumé and upload Release Asset
+
+# Controls when the workflow will run
+on:
+  release:
+    types: [created]
+
+# The sequence of runs in this workflow:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check OS Version
+        run: lsb_release -a
+      - name: Show Kernel Information
+        run: uname -a
+      - name: Check out Repository Code
+        uses: actions/checkout@v4
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: |
+            paper.tex
+      - name: Build project
+        run: |
+          zip --junk-paths my-artifact README.md resume.pdf resume-ast.pdf
+      - name: Get Release Number
+        id: get_release
+        uses: bruceadams/get-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./my-artifact.zip
+          asset_name: ${{ github.actor }}-resume-${{ steps.get_release.outputs.tag_name }}.zip
+          asset_content_type: application/pdf

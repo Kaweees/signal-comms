@@ -1,0 +1,54 @@
+---
+name: Compile LaTeX Résumé and deploy to GitHub Pages
+
+# Controls when the workflow will run
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "*.tex"
+      - "index.html"
+      - ".github/workflows/**"
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "*.tex"
+      - "index.html"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+# The sequence of runs in this workflow:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check OS Version
+        run: lsb_release -a
+      - name: Show Kernel Information
+        run: uname -a
+      - name: Check out Repository Code
+        uses: actions/checkout@v4
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: |
+            paper.tex
+      - name: Post Processing
+        run: |
+          mkdir build 
+          cp *.pdf build/ 
+          cp index.html build/
+      - name: Deploy to gh-pages
+        uses: crazy-max/ghaction-github-pages@v4
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        with:
+          # the output branch mentioned above
+          target_branch: gh-pages
+          build_dir: ./build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
